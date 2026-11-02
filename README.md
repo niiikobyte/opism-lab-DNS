@@ -40,23 +40,23 @@
 
 | № | scheme | userinfo | host | port | path | query | fragment |
 |---|---|---|---|---|---|---|---|
-| 1 |http |- |www.s25.lab |80 (за замовчуванням) |users/items |lang=81&from=asc#top |- |
+| 1 |http |- |www.s25.lab |80 (за замовчуванням) |users/items |lang=81&from=asc |top |
 | 2 |http |- |files.s25.lab |80 |items |lang=%D0%BA%D0%B8%D1%97%D0%B2 |- |
-| 3 |http |user:pass |@beta.s25.lab |80 (за замовчуванням) |users#summary |- |- |
+| 3 |http |user:pass |@beta.s25.lab |80 (за замовчуванням) |users |- |summary |
 | 4 |https |- |www.s25.lab |4443 |users/../items |- |- |
 | 5 |mailto |- |admin@s25.lab |- |- |subject=users |- |
 
 | № | Ім'я, що запитується в DNS | Заголовок `Host` | Ціль запиту (request target) |
 |---|---|---|---|
-| 1 | | | |
-| 2 | | | |
-| 3 | | | |
-| 4 | | | |
-| 5 | | | |
+| 1 |www.s25.lab |www.s25.lab |users/items?lang=81&from=asc#top |
+| 2 |files.s25.lab |files.s25.lab:80 |items/?lang=%D0%BA%D0%B8%D1%97%D0%B2 |
+| 3 |user:pass@beta.s25.lab |beta.s25.lab |users#summary |
+| 4 |www.s25.lab |www.s25.lab:4443 |users/../items |
+| 5 |mailto:admin@s25.lab |- |subject=users |
 
-Декодоване значення параметра URI 2:
+Декодоване значення параметра URI 2: київ
 
-Чому URI 5 не має складової host, хоча містить символ `@`:
+Чому URI 5 не має складової host, хоча містить символ `@`: це url не є ієрархічною і не є посиланням на сайт, синтаксис не шукає у поссилані хост а передає рядок поштовій програмі. @ это обов'язковим синтаксису електроної пошти, яка є у посиланні.
 
 ### 1.2. Перевірка (після завдання 3)
 
