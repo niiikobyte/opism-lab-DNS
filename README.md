@@ -12,7 +12,7 @@
 |---|---|
 | ПІБ |Нікітюк Нікіта Олексійович |
 | Група |ІПЗ-2.01 |
-| Ідентифікатор (`sNN`) |snn-201-25 |
+| Ідентифікатор (`sNN`) |s-201-25 |
 | Дата виконання |02.11.2026 |
 | Середовище |GitHub Codespaces |
 | Версія `dig` | DiG 9.18.39-0ubuntu0.24.04.9-Ubuntu |
@@ -62,26 +62,54 @@
 
 <!-- Для URI 1–3: рядки запиту (починаються з ">") і тіло відповіді сервера. -->
 
-```text
-
+```
+root@ns-s25:/# curl -v "http://www.s25.lab/users/archive?id=23&lang=asc#section-2"
+* Host www.s25.lab:80 was resolved.
+* IPv6: (none)
+* IPv4: 10.53.0.80
+*   Trying 10.53.0.80:80...
+* Connected to www.s25.lab (10.53.0.80) port 80
+> GET /users/archive?id=23&lang=asc HTTP/1.1
+> Host: www.s25.lab
+> User-Agent: curl/8.5.0
+> Accept: */*
+> 
+< HTTP/1.1 200 OK
+< Server: nginx/1.24.0 (Ubuntu)
+< Date: Mon, 09 Nov 2026 07:43:20 GMT
+< Content-Type: text/plain
+< Content-Length: 136
+< Connection: keep-alive
+< 
+server: web-a
+Host: www.s25.lab
+request URI: /users/archive?id=23&lang=asc
+path: /users/archive
+query: id=23&lang=asc
+client: 10.53.1.1
+* Connection #0 to host www.s25.lab left intact
 ```
 
 Значення заголовка `Authorization` і результат декодування:
 
-```text
-
+```
+Authorization: Basic dXNlcjI1OnNlY3JldDI1cGFzcw==
+user25:secret25pass
+(Користувач: user25, Пароль: secret25pass)
 ```
 
 URI 4: етап, на якому запит не вдається (пошук імені / TCP / TLS), і рядки виводу, що це підтверджують:
 
-```text
-
+```
+* Could not resolve host: www.bad-domain.lab
+* Closing connection
+curl: (6) Could not resolve host: www.bad-domain.lab
 ```
 
 | Запит | `request URI`, отриманий сервером | `path`, отриманий сервером |
 |---|---|---|
-| звичайний | | |
-| `--path-as-is` | | |
+| звичайний |/users/archive |/users/archive |
+| `--path-as-is` |/users/../users/archive |/users/../users/archive |
 
 Розбіжності між URI та тим, що отримав сервер, і їх пояснення:
 
