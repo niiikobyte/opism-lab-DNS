@@ -230,23 +230,64 @@ zone reload up-to-date
 
 Порівняння відповідей резолвера та власного сервера:
 
-```text
+```
+root@ns-s25:/# dig files.s-201-25.lab
 
+; <<>> DiG 9.18.39-0ubuntu0.24.04.8-Ubuntu <<>> files.s-201-25.lab
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NXDOMAIN, id: 44405
+;; flags: qr rd ra; QUERY: 1, ANSWER: 0, AUTHORITY: 1, ADDITIONAL: 1
+
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags:; udp: 1232
+;; QUESTION SECTION:
+;files.s-201-25.lab.            IN      A
+
+;; AUTHORITY SECTION:
+lab.                    60      IN      SOA     ns1.nic.lab. hostmaster.nic.lab. 1793602467 1800 900 604800 60
+
+;; Query time: 39 msec
+;; SERVER: 10.53.0.53#53(10.53.0.53) (UDP)
+;; WHEN: Mon Nov 09 07:31:16 UTC 2026
+;; MSG SIZE  rcvd: 102
+; <<>> DiG 9.18.39-0ubuntu0.24.04.8-Ubuntu <<>> s25.lab MX
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 24775
+;; flags: qr rd ra; QUERY: 1, ANSWER: 0, AUTHORITY: 1, ADDITIONAL: 1
+
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags:; udp: 1232
+;; QUESTION SECTION:
+;s25.lab.                       IN      MX
+
+;; AUTHORITY SECTION:
+s25.lab.                45      IN      SOA     ns.s25.lab. admin.s25.lab. 2026110201 3600 600 86400 60
+
+;; Query time: 39 msec
+;; SERVER: 10.53.0.53#53(10.53.0.53) (UDP)
+;; WHEN: Mon Nov 09 07:33:08 UTC 2026
+;; MSG SIZE  rcvd: 81
 ```
 
 | Запит | flags | ANSWER (кількість, типи) | AUTHORITY (кількість, типи) | ADDITIONAL (кількість, типи) | TTL |
 |---|---|---|---|---|---|
-| псевдонім через resolver-a | | | | | |
-| псевдонім через 10.53.1.1 | | | | | |
-| MX через resolver-a | | | | | |
-| MX через 10.53.1.1 | | | | | |
+| псевдонім через resolver-a |qr rd ra |0 |1 |1 |60 |
+| псевдонім через 10.53.1.1 |qr aa rd |0 |1 |1 |45 |
+| MX через resolver-a |qr rd ra |0 |1 |1 |45 |
+| MX через 10.53.1.1 |qr aa rd |0 |1 |1 |45 |
 
 Пояснення відмінностей:
 
 Повідомлення `zone-check` після тимчасового додавання `@ IN CNAME www`:
 
-```text
-
+```
+root@ns-s25:/# zone-reload
+/lab/zone/s25.lab.zone:20: file does not end with newline
+zone s25.lab/IN: loaded serial 2026110201
+OK
+zone reload queued
 ```
 
 1. Який TTL має кожен запис зони і звідки це значення взято?
