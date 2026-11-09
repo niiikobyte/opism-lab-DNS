@@ -15,7 +15,7 @@
 | Ідентифікатор (`sNN`) |snn-201-25 |
 | Дата виконання |02.11.2026 |
 | Середовище |GitHub Codespaces |
-| Версія `dig` | <!-- перший рядок виводу команди dig -v у терміналі стенда --> |
+| Версія `dig` | DiG 9.18.39-0ubuntu0.24.04.9-Ubuntu |
 
 ## Параметри варіанта
 
@@ -87,20 +87,110 @@ URI 4: етап, на якому запит не вдається (пошук і
 
 ## Завдання 2. Проходження ієрархії вручну
 
-```text
+```
+@niiikobyte ➜ /workspaces/opism-lab-DNS (master) $ dig @10.53.0.2  ns.s-201-25.lab A +norec
 
+; <<>> DiG 9.18.39-0ubuntu0.24.04.9-Ubuntu <<>> @10.53.0.2 ns.s-201-25.lab A +norec
+; (1 server found)
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 5192
+;; flags: qr; QUERY: 1, ANSWER: 0, AUTHORITY: 1, ADDITIONAL: 2
+
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags:; udp: 1232
+; COOKIE: 393b07a3ae6a4cc3010000006af16be6be97a088d3207f1f (good)
+;; QUESTION SECTION:
+;ns.s-201-25.lab.               IN      A
+
+;; AUTHORITY SECTION:
+lab.                    172800  IN      NS      ns1.nic.lab.
+
+;; ADDITIONAL SECTION:
+ns1.nic.lab.            172800  IN      A       10.53.0.3
+
+;; Query time: 80 msec
+;; SERVER: 10.53.0.2#53(10.53.0.2) (UDP)
+;; WHEN: Mon Nov 09 06:44:55 UTC 2026
+;; MSG SIZE  rcvd: 116
+@niiikobyte ➜ /workspaces/opism-lab-DNS (master) $ dig @10.53.0.3  ns.s-201-25.la
+b A +norec
+
+; <<>> DiG 9.18.39-0ubuntu0.24.04.9-Ubuntu <<>> @10.53.0.3 ns.s-201-25.lab A +norec
+; (1 server found)
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NXDOMAIN, id: 48861
+;; flags: qr aa; QUERY: 1, ANSWER: 0, AUTHORITY: 1, ADDITIONAL: 1
+
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags:; udp: 1232
+; COOKIE: 5ef105149390a7e0010000006af16c1f0b46583f00e4824e (good)
+;; QUESTION SECTION:
+;ns.s-201-25.lab.               IN      A
+
+;; AUTHORITY SECTION:
+lab.                    60      IN      SOA     ns1.nic.lab. hostmaster.nic.lab. 1793602467 1800 900 604800 60
+
+;; Query time: 80 msec
+;; SERVER: 10.53.0.3#53(10.53.0.3) (UDP)
+;; WHEN: Mon Nov 09 06:45:51 UTC 2026
+;; MSG SIZE  rcvd: 133
+@niiikobyte ➜ /workspaces/opism-lab-DNS (master) $ dig @10.53.1.1  ns.s-201-25.la
+b A +norec
+
+; <<>> DiG 9.18.39-0ubuntu0.24.04.9-Ubuntu <<>> @10.53.1.1 ns.s-201-25.lab A +norec
+; (1 server found)
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: REFUSED, id: 27760
+;; flags: qr; QUERY: 1, ANSWER: 0, AUTHORITY: 0, ADDITIONAL: 1
+
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags:; udp: 1232
+; COOKIE: 8d062fc903360bb7010000006af16c39437cae51af534c7b (good)
+;; QUESTION SECTION:
+;ns.s-201-25.lab.               IN      A
+
+;; Query time: 4 msec
+;; SERVER: 10.53.1.1#53(10.53.1.1) (UDP)
+;; WHEN: Mon Nov 09 06:46:17 UTC 2026
+;; MSG SIZE  rcvd: 72
 ```
 
 | Сервер | status | flags | ANSWER | AUTHORITY | ADDITIONAL |
 |---|---|---|---|---|---|
-| 10.53.0.2 | | | | | |
-| 10.53.0.3 | | | | | |
-| 10.53.1.1 | | | | | |
+| 10.53.0.2 |NOERROR |qr |0 |1 |2 |
+| 10.53.0.3 |NXDOMAIN |qr aa |0 |1 |1 |
+| 10.53.1.1 |REFUSED |qr |0 |0 |1 |
 
-Вивід `dig ns.sNN.lab A +trace`:
+Вивід `dig ns.s-201-25.lab A +trace`:
 
-```text
+```
+; <<>> DiG 9.18.39-0ubuntu0.24.04.9-Ubuntu <<>> ns.s-201-25.lab A +trace
+;; global options: +cmd
+.                       515016  IN      NS      a.root-servers.net.
+.                       515016  IN      NS      k.root-servers.net.
+.                       515016  IN      NS      d.root-servers.net.
+.                       515016  IN      NS      m.root-servers.net.
+.                       515016  IN      NS      b.root-servers.net.
+.                       515016  IN      NS      h.root-servers.net.
+.                       515016  IN      NS      f.root-servers.net.
+.                       515016  IN      NS      l.root-servers.net.
+.                       515016  IN      NS      i.root-servers.net.
+.                       515016  IN      NS      g.root-servers.net.
+.                       515016  IN      NS      c.root-servers.net.
+.                       515016  IN      NS      e.root-servers.net.
+.                       515016  IN      NS      j.root-servers.net.
+;; Received 811 bytes from 127.0.0.53#53(127.0.0.53) in 4 ms
 
+.                       86400   IN      SOA     a.root-servers.net. nstld.verisign-grs.com. 2026110900 1800 900 604800 86400
+.                       86400   IN      RRSIG   SOA 8 0 86400 20261122050000 20261109040000 8763 . o86l5Sj+P6aUzJ0E2Mzk30vukS89QXwJYCJuYX12ah2EYoSayeGi/OFj /zTGj+VmbW8lPcTcbhEg+ftpPobRXD3CeH1tLk/kyBqA6jEmToLBiMkl 39VNwSjExKPJoj8LHYOz7QIyquLEpiouq3neMmTlSs02KoTHpu2D/q3w AJSQ4sYUviARpFxLWpNn9NMxWMEq7hOozOi6A5axF1qQhjeVIoHSx5Yz rI/peiiQ2s5Ua1/ztx1aopPMT6LyeoR029awxp0Ve+IEHZtc0C0ull5w dB59wxRzEeUJV6g0ZK+H3UwdWAbIQruFpVfat9JRZxiaF+BNUC42Useu DsIIPQ==
+la.                     86400   IN      NSEC    lacaixa. NS DS RRSIG NSEC
+la.                     86400   IN      RRSIG   NSEC 8 1 86400 20261122050000 20261109040000 8763 . GknSlpDXRYW7KR9VNMsoiJduO1nfLXMba0t+teAtxNWZj3I7UO0RDKnE ROiYUDNlerCGgPlQ3Ax8slHrAbbPWzfoGRAcg610/NStSpbSkguRd23M +E7yQ3IjauSoy8IGDyWTZ6U/MQaiIIzwl5ZSLAcozel0EM8aP68Kg+PJ /wN2ThuP8JnsomaIASL0VESUBLlvT1PPBNh2Vmm7wmtVIXd/2H/2KpMo +KEHSLia5QgBnsXuaaINipZ1Tqm6R3gL2QmejJzwC0xBaPtDGNXgPdxd nzOyOzhH6ir46QFZJqvW/ztuDQNMBiIh6wib8dDF3ECmkezHVPX0iRVD TcRABg==
+.                       86400   IN      NSEC    aaa. NS SOA RRSIG NSEC DNSKEY ZONEMD
+.                       86400   IN      RRSIG   NSEC 8 0 86400 20261122050000 20261109040000 8763 . L69jfqvgAXfIKLqOVQsgqd/KqraY8LlIDuSu5umuoA9bFe7Ho+NwI21u OWqHdyRtCLSsD7pX03FzdsC+lTi1IFy02E0rAFh0hxcHSYmkQPrkvmKC IC7FNkxCTEQ0OuZq5aE6EJCzRFhdbfmWsOjBppvo2PtfZ0U4IWG2cF9F aYuKaH3bTmT+0ybvgKrBMnJBCBC7kbnPjDQpTqAjHGHC7MCca82WdOtH RPdovO+DdSF6h+FG7DdMoNVNq1/zFrpqas8E6CDsFxDsusgGrI+ehXc+ 96fc3yGhtgjUMB5nlK2kUHzF6A/XG6okooWQfOGUAoaeFQaiaXJ3A3Nd t3dMlQ==
+;; Received 1035 bytes from 198.41.0.4#53(a.root-servers.net) in 9 ms
 ```
 
 | Запит | TTL запису NS | Прапорець `aa` | Секція, у якій міститься NS |
