@@ -328,21 +328,84 @@ zone reload queued
 
 Два запити з інтервалом 5 с:
 
-```text
+```
+root@ns-s25:/# dig www.s25.lab
 
+; <<>> DiG 9.18.39-0ubuntu0.24.04.8-Ubuntu <<>> www.s25.lab
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 25263
+;; flags: qr rd ra; QUERY: 1, ANSWER: 1, AUTHORITY: 0, ADDITIONAL: 1
+
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags:; udp: 1232
+;; QUESTION SECTION:
+;www.s25.lab.                   IN      A
+
+;; ANSWER SECTION:
+www.s25.lab.            71      IN      A       10.53.0.80
+
+;; Query time: 0 msec
+;; SERVER: 10.53.0.53#53(10.53.0.53) (UDP)
+;; WHEN: Mon Nov 09 15:50:15 UTC 2026
+;; MSG SIZE  rcvd: 56
+
+root@ns-s25:/# dig www.s25.lab
+
+; <<>> DiG 9.18.39-0ubuntu0.24.04.8-Ubuntu <<>> www.s25.lab
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 381
+;; flags: qr rd ra; QUERY: 1, ANSWER: 1, AUTHORITY: 0, ADDITIONAL: 1
+
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags:; udp: 1232
+;; QUESTION SECTION:
+;www.s25.lab.                   IN      A
+
+;; ANSWER SECTION:
+www.s25.lab.            66      IN      A       10.53.0.80
+
+;; Query time: 1 msec
+;; SERVER: 10.53.0.53#53(10.53.0.53) (UDP)
+;; WHEN: Mon Nov 09 15:50:20 UTC 2026
+;; MSG SIZE  rcvd: 56
 ```
 
 **Прогноз** (записати до вимірювання). Формула часу появи нової адреси через залишок R, найбільша можлива затримка:
 
 Перевірка, що сервер до `zone-reload` повертає стару адресу:
 
-```text
-
+```
+/lab/zone/s25.lab.zone:20: file does not end with newline
+zone s25.lab/IN: loaded serial 2026110201
+OK
+zone reload up-to-date
 ```
 
 Залишок R і час (крок 4), час `zone-reload` (крок 5), перевірка на сервері (крок 6):
 
-```text
+```
+R = 66, 15:50:24,
+
+root@ns-s25:/# dig @10.53.0.53 www.s25.lab +norec
+
+; <<>> DiG 9.18.39-0ubuntu0.24.04.8-Ubuntu <<>> @10.53.0.53 www.s25.lab +norec
+; (1 server found)
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: REFUSED, id: 20176
+;; flags: qr ra; QUERY: 1, ANSWER: 0, AUTHORITY: 0, ADDITIONAL: 1
+
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags:; udp: 1232
+;; QUESTION SECTION:
+;www.s25.lab.                   IN      A
+
+;; Query time: 0 msec
+;; SERVER: 10.53.0.53#53(10.53.0.53) (UDP)
+;; WHEN: Mon Nov 09 15:54:16 UTC 2026
+;; MSG SIZE  rcvd: 40
 
 ```
 
@@ -350,22 +413,30 @@ zone reload queued
 
 Вивід циклу спостереження (перші два рядки, два останні рядки зі старою адресою, рядок з новою адресою):
 
-```text
-
+```
+root@ns-s25:/# while true; do echo -n "$(date -u +%H:%M:%S) -> "; curl -s www.s25
+.lab | grep "server:"; sleep 1; done
+16:07:20 -> server: web-a
+16:07:21 -> server: web-a
+root@ns-s25:/# while true; do echo -n "$(date -u +%H:%M:%S) -> "; curl -s @10.53.0.81  www.s25.lab | grep "server:"; sleep 1; done
+16:06:48 -> server: web-b
+server: web-a
+16:06:49 -> server: web-b
+server: web-a
 ```
 
-Рядок `server:` з відповіді `curl`:
+Рядок `server:` з відповіді `curl`: `server: web-a`
 
 | Час зміни | Очікуваний час | Спостережений час | Виміряна затримка, с | Прогноз, с |
 |---|---|---|---|---|
-| | | | | |
+|15:50:24 |15:51:30 |15:51:30 |66 |90 |
 
 1. Чим пояснюється розбіжність між прогнозом і виміряним значенням?
-
+>
 2. Якою була б найбільша можлива затримка для цього запису і за яких умов?
-
+>
 3. Як слід діяти, щоб перенести сервіс на нову адресу, якщо TTL запису становить 86 400 с?
-
+>
 ## Завдання 5. Негативне кешування
 
 **Прогноз** (записати до вимірювання). Формула за RFC 2308 і розраховане значення:
