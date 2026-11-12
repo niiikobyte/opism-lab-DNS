@@ -753,36 +753,118 @@ TLD: рядок B - 40 мс
 
 **Прогноз** (записати до вимірювання). Що поверне кожен резолвер після зупинки сервера та спливання TTL і скільки часу займе відповідь:
 
-resolver-a: 
+resolver-a: після спливання TTL (75 с) спробує оновити запис, не отримає відповіді від зупиненого сервера до того як вивести помилку про невдале підключення.
+resolver-b: увімкнено режим serve-stale тому навіть після спливання TTL він миттєво поверне останню збережену IP-адресу зі статусом NOERROR та малим залишковим TTL.
 
 Кешування запису в обох резолверах (крок 2) і час зупинки сервера (крок 3):
 
-```text
-
+```
+root@ns-s25:/# dig @10.53.0.53 www.s25.lab +short
+10.53.0.81
+root@ns-s25:/# dig @10.53.0.54 www.s25.lab +short
+root@ns-s25:/# date -u +%T && named-stop
+18:44:58
+rndc: connect failed: 127.0.0.1#953: connection refused
 ```
 
 Запити із заміром часу (крок 5):
 
-```text
+```
+root@ns-s25:/# time dig @10.53.0.53 www.s25.lab
 
+; <<>> DiG 9.18.39-0ubuntu0.24.04.8-Ubuntu <<>> @10.53.0.53 www.s25.lab
+; (1 server found)
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 14586
+;; flags: qr rd ra; QUERY: 1, ANSWER: 1, AUTHORITY: 0, ADDITIONAL: 1
+
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags:; udp: 1232
+;; QUESTION SECTION:
+;www.s25.lab.                   IN      A
+
+;; ANSWER SECTION:
+www.s25.lab.            27      IN      A       10.53.0.81
+
+;; Query time: 1 msec
+;; SERVER: 10.53.0.53#53(10.53.0.53) (UDP)
+;; WHEN: Thu Nov 12 18:46:26 UTC 2026
+;; MSG SIZE  rcvd: 56
+
+
+real    0m0.022s
+user    0m0.006s
+sys     0m0.005s
+root@ns-s25:/# time dig @10.53.0.53 www.s25.lab
+
+; <<>> DiG 9.18.39-0ubuntu0.24.04.8-Ubuntu <<>> @10.53.0.53 www.s25.lab
+; (1 server found)
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: SERVFAIL, id: 26194
+;; flags: qr rd ra; QUERY: 1, ANSWER: 0, AUTHORITY: 0, ADDITIONAL: 1
+
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags:; udp: 1232
+;; QUESTION SECTION:
+;www.s25.lab.                   IN      A
+
+;; Query time: 0 msec
+;; SERVER: 10.53.0.53#53(10.53.0.53) (UDP)
+;; WHEN: Thu Nov 12 18:46:30 UTC 2026
+;; MSG SIZE  rcvd: 40
+
+
+real    0m0.014s
+user    0m0.006s
+sys     0m0.007s
+root@ns-s25:/# time dig @10.53.0.54 www.s25.lab
+;; communications error to 10.53.0.54#53: timed out
+
+; <<>> DiG 9.18.39-0ubuntu0.24.04.8-Ubuntu <<>> @10.53.0.54 www.s25.lab
+; (1 server found)
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: SERVFAIL, id: 27278
+;; flags: qr rd ra; QUERY: 1, ANSWER: 0, AUTHORITY: 0, ADDITIONAL: 1
+
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags:; udp: 1232
+;; QUESTION SECTION:
+;www.s25.lab.                   IN      A
+
+;; Query time: 1001 msec
+;; SERVER: 10.53.0.54#53(10.53.0.54) (UDP)
+;; WHEN: Thu Nov 12 18:46:42 UTC 2026
+;; MSG SIZE  rcvd: 40
+
+
+real    0m6.015s
+user    0m0.010s
+sys     0m0.002s
 ```
 
 | Запит | status або тайм-аут | ANSWER, TTL | `real` |
 |---|---|---|---|
-| resolver-a, перший | | | |
-| resolver-a, другий | | | |
-| resolver-b | | | |
+| resolver-a, перший |SERVFAIL |1 |0m0.022s |
+| resolver-a, другий |SERVFAIL |0 |0m0.014s |
+| resolver-b |SERVFAIL |1 |0m6.015s |
 
 Час `named-start` і вивід циклу спостереження до першої успішної відповіді (крок 6):
 
-```text
-
+```
+root@ns-s25:/# date -u +%T && named-start
+while true; do echo "$(date -u +%T) $(dig @10.53.0.53 www.s25.lab +noall +comments | grep -o 'status: [A-Z]*')"; sleep 1; done
+18:47:26
+18:47:26 status: NOERROR
 ```
 
 Перевірка після завдання (`dig @10.53.1.1 sNN.lab SOA +norec +short`):
 
-```text
-
+```
+root@ns-s25:/# dig @10.53.1.1 s25.lab SOA +norec +short
+ns.s25.lab. admin.s25.lab. 2026110201 3600 600 86400 60
 ```
 
 ### Постмортем
