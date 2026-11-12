@@ -324,6 +324,7 @@ zone reload queued
 > 0 записів, запитувань псевдоніма не існує в зоні.
 3. Чому запис CNAME неможливо розмістити для імені `@`?
 > запис CNAME не може співіснувати з іншими типами записів для одного й того самого імені.
+
 ## Завдання 4. TTL і видимість змін
 
 Два запити з інтервалом 5 с:
@@ -439,29 +440,82 @@ server: web-a
 > Потрібно зменшити tll запису до мінімуму та зачекати коли страший кеш зникне, та створити нову адресу.
 ## Завдання 5. Негативне кешування
 
-**Прогноз** (записати до вимірювання). Формула за RFC 2308 і розраховане значення:
+**Прогноз** (записати до вимірювання). Формула за RFC 2308 і розраховане значення: negative ttl = min(soa ttl, soa.minimum) = min(45, 60) = 45 c.
 
 Перевірка, що сервер до `zone-reload` повертає `NXDOMAIN`:
 
 ```
+root@ns-s25:/# dig @10.53.1.1 new-nlujf.s25.lab A +norec
 
+; <<>> DiG 9.18.39-0ubuntu0.24.04.8-Ubuntu <<>> @10.53.1.1 new-nlujf.s25.lab A +norec
+; (1 server found)
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NXDOMAIN, id: 35651
+;; flags: qr aa; QUERY: 1, ANSWER: 0, AUTHORITY: 1, ADDITIONAL: 1
+
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags:; udp: 1232
+; COOKIE: 475f0aa12a425b93010000006af5f49d95720e97d79f531a (good)
+;; QUESTION SECTION:
+;new-nlujf.s25.lab.             IN      A
+
+;; AUTHORITY SECTION:
+s25.lab.                45      IN      SOA     ns.s25.lab. admin.s25.lab. 2026110201 3600 600 86400 60
+
+;; Query time: 0 msec
+;; SERVER: 10.53.1.1#53(10.53.1.1) (UDP)
+;; WHEN: Thu Nov 12 17:17:17 UTC 2026
+;; MSG SIZE  rcvd: 119
 ```
 
 Запит через resolver-a (крок 3), час `zone-reload` (крок 4), перевірка на сервері (крок 5):
 
 ```
+root@ns-s25:/# dig @10.53.0.53 new-nlujf.s25.lab A
 
+; <<>> DiG 9.18.39-0ubuntu0.24.04.8-Ubuntu <<>> @10.53.0.53 new-nlujf.s25.lab A
+; (1 server found)
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NXDOMAIN, id: 36375
+;; flags: qr rd ra; QUERY: 1, ANSWER: 0, AUTHORITY: 1, ADDITIONAL: 1
+
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags:; udp: 1232
+;; QUESTION SECTION:
+;new-nlujf.s25.lab.             IN      A
+
+;; AUTHORITY SECTION:
+s25.lab.                45      IN      SOA     ns.s25.lab. admin.s25.lab. 2026110201 3600 600 86400 60
+
+;; Query time: 1 msec
+;; SERVER: 10.53.0.53#53(10.53.0.53) (UDP)
+;; WHEN: Thu Nov 12 17:18:59 UTC 2026
+;; MSG SIZE  rcvd: 91
+root@ns-s25:/# zone-reload
+/lab/zone/s25.lab.zone:21: file does not end with newline
+zone s25.lab/IN: loaded serial 2026110201
+OK
+zone reload queued
+17:19:34
 ```
 
 Вивід циклу спостереження (перші два рядки, останній рядок з `NXDOMAIN`, перший рядок з `NOERROR`):
 
 ```text
-
+root@ns-s25:/# while true; do echo "$(date -u +%T) $(dig @10.53.0.53 new-nlujf.s25.lab +noall +comments | grep -o 'status: [A-Z]*')"; sleep 1; done
+17:21:38 status: NOERROR
+17:21:39 status: NOERROR
+17:21:40 status: NOERROR
+root@ns-s25:/# while true; do echo "$(date -u +%T) $(dig @10.53.0.53 new2-nlujf.s25.lab +noall +comments | grep -o 'status: [A-Z]*')"; sleep 1; done
+17:26:32 status: NXDOMAIN
+17:26:33 status: NXDOMAIN
 ```
 
 | Негативну відповідь закешовано | Запис створено | Ім'я резолвиться через resolver-a | Виміряно, с | Прогноз, с |
 |---|---|---|---|---|
-| | | | | |
+|17:17:17 |17:18:59 |17:21:38 |45 |45 |
 
 <!-- Якщо завдання повторювалося з іншим ім'ям (new2-…), зазначити це й причину. -->
 
