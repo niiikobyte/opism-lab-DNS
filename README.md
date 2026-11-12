@@ -887,8 +887,27 @@ ns.s25.lab. admin.s25.lab. 2026110201 3600 600 86400 60
 
 <!-- Повний вміст stand/students/sNN/zone/sNN.lab.zone після завершення роботи. -->
 
-```text
+```
+; Zone s25.lab — starting version.
+$TTL 75
+; After every change: increase the serial, then run  zone-reload
+@     45 IN SOA ns.s25.lab. admin.s25.lab. (
+            2026110201 ; serial
+            3600       ; refresh
+            600        ; retry
+            86400      ; expire
+            60         ; minimum
+        )
+@     IN NS ns.s25.lab.
+ns    IN A  10.53.1.1
 
+; ---- add records from your variant card below this line ----
+www     IN  A      10.53.0.81
+files   IN  CNAME  www
+mail    IN  A      10.53.0.80
+@       IN  MX     25 mail
+@       IN  TXT    "lab-token=51ef5666"
+beta    40  IN  A      10.53.0.80
 ```
 
 ## Висновки
