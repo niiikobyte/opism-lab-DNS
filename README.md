@@ -520,10 +520,11 @@ root@ns-s25:/# while true; do echo "$(date -u +%T) $(dig @10.53.0.53 new2-nlujf.
 <!-- Якщо завдання повторювалося з іншим ім'ям (new2-…), зазначити це й причину. -->
 
 1. Чому тривалість негативного кешування визначається записом SOA, а не записом, який запитували?
-
+> Запис неіснує у відповіді, тому взяти з нього tll неможливо. Север додає запис SOA у секцію AUTHORITY, щоб резолвер вирахував час кешування за формулою.
 2. Чи збігається TTL запису SOA в секції AUTHORITY з TTL запису SOA у файлі зони? Поясніть.
-
+> У першій відповіді — так (45 с), бо \(\min(45, 60) = 45\)
 3. Скрипт розгортання перевіряє ім'я сервісу до створення запису, а потім одразу після. Що він побачить і як це виправити?
+> Скрипт закешує NXDOMAIN під час першої перевірки і продовжить отримувати помилку протягом 45 секунд навіть після створення запису. Що бце виправити потрібно перевіряти ім'я напряму на авторитетному сервері (10.53.1.1) або очищати кеш резолвера.
 
 ## Завдання 6. Затримка пошуку імені
 
@@ -531,15 +532,189 @@ root@ns-s25:/# while true; do echo "$(date -u +%T) $(dig @10.53.0.53 new2-nlujf.
 
 | Ім'я | Перший запит | Повторний запит |
 |---|---|---|
-| A: нове ім'я у власній зоні | | |
-| B: нове ім'я в зоні `lab.` | | |
-| C: ім'я в неіснуючому TLD | | |
-| D: `www.sNN.lab` після перезапуску резолвера | | |
+| A: нове ім'я у власній зоні |10.53.1.1 |Кеш резолвера |
+| B: нове ім'я в зоні `lab.` |10.53.0.3 |Кеш резолвера |
+| C: ім'я в неіснуючому TLD |10.53.0.2 |Кеш резолвера |
+| D: `www.sNN.lab` після перезапуску резолвера |10.53.0.2/10.53.0.3/10.53.1.1 |Кеш резолвера |
 
 Вивід вимірювань:
 
-```text
+```
+root@ns-s25:/# dig @10.53.0.53 test-a.s25.lab
 
+; <<>> DiG 9.18.39-0ubuntu0.24.04.8-Ubuntu <<>> @10.53.0.53 test-a.s25.lab
+; (1 server found)
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NXDOMAIN, id: 52765
+;; flags: qr rd ra; QUERY: 1, ANSWER: 0, AUTHORITY: 1, ADDITIONAL: 1
+
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags:; udp: 1232
+;; QUESTION SECTION:
+;test-a.s25.lab.                        IN      A
+
+;; AUTHORITY SECTION:
+s25.lab.                9       IN      SOA     ns.s25.lab. admin.s25.lab. 2026110201 3600 600 86400 60
+
+;; Query time: 1 msec
+;; SERVER: 10.53.0.53#53(10.53.0.53) (UDP)
+;; WHEN: Thu Nov 12 18:03:23 UTC 2026
+;; MSG SIZE  rcvd: 88
+
+root@ns-s25:/# dig @10.53.0.53 test-a.s25.lab
+
+; <<>> DiG 9.18.39-0ubuntu0.24.04.8-Ubuntu <<>> @10.53.0.53 test-a.s25.lab
+; (1 server found)
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NXDOMAIN, id: 12866
+;; flags: qr rd ra; QUERY: 1, ANSWER: 0, AUTHORITY: 1, ADDITIONAL: 1
+
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags:; udp: 1232
+;; QUESTION SECTION:
+;test-a.s25.lab.                        IN      A
+
+;; AUTHORITY SECTION:
+s25.lab.                7       IN      SOA     ns.s25.lab. admin.s25.lab. 2026110201 3600 600 86400 60
+
+;; Query time: 0 msec
+;; SERVER: 10.53.0.53#53(10.53.0.53) (UDP)
+;; WHEN: Thu Nov 12 18:03:25 UTC 2026
+;; MSG SIZE  rcvd: 88
+
+root@ns-s25:/# dig @10.53.0.53 test-b.lab
+
+; <<>> DiG 9.18.39-0ubuntu0.24.04.8-Ubuntu <<>> @10.53.0.53 test-b.lab
+; (1 server found)
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NXDOMAIN, id: 3836
+;; flags: qr rd ra; QUERY: 1, ANSWER: 0, AUTHORITY: 1, ADDITIONAL: 1
+
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags:; udp: 1232
+;; QUESTION SECTION:
+;test-b.lab.                    IN      A
+
+;; AUTHORITY SECTION:
+lab.                    60      IN      SOA     ns1.nic.lab. hostmaster.nic.lab. 1794242636 1800 900 604800 60
+
+;; Query time: 40 msec
+;; SERVER: 10.53.0.53#53(10.53.0.53) (UDP)
+;; WHEN: Thu Nov 12 18:04:51 UTC 2026
+;; MSG SIZE  rcvd: 94
+
+root@ns-s25:/# dig @10.53.0.53 test-b.lab
+
+; <<>> DiG 9.18.39-0ubuntu0.24.04.8-Ubuntu <<>> @10.53.0.53 test-b.lab
+; (1 server found)
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NXDOMAIN, id: 20174
+;; flags: qr rd ra; QUERY: 1, ANSWER: 0, AUTHORITY: 1, ADDITIONAL: 1
+
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags:; udp: 1232
+;; QUESTION SECTION:
+;test-b.lab.                    IN      A
+
+;; AUTHORITY SECTION:
+lab.                    59      IN      SOA     ns1.nic.lab. hostmaster.nic.lab. 1794242636 1800 900 604800 60
+
+;; Query time: 1 msec
+;; SERVER: 10.53.0.53#53(10.53.0.53) (UDP)
+;; WHEN: Thu Nov 12 18:04:52 UTC 2026
+;; MSG SIZE  rcvd: 94
+
+root@ns-s25:/# dig @10.53.0.53 test.fake
+
+; <<>> DiG 9.18.39-0ubuntu0.24.04.8-Ubuntu <<>> @10.53.0.53 test.fake
+; (1 server found)
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NXDOMAIN, id: 8931
+;; flags: qr rd ra; QUERY: 1, ANSWER: 0, AUTHORITY: 1, ADDITIONAL: 1
+
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags:; udp: 1232
+;; QUESTION SECTION:
+;test.fake.                     IN      A
+
+;; AUTHORITY SECTION:
+.                       60      IN      SOA     a.root-servers.net. hostmaster.nic.lab. 1794242636 1800 900 604800 60
+
+;; Query time: 80 msec
+;; SERVER: 10.53.0.53#53(10.53.0.53) (UDP)
+;; WHEN: Thu Nov 12 18:05:15 UTC 2026
+;; MSG SIZE  rcvd: 109
+
+root@ns-s25:/# dig @10.53.0.53 test.fake
+
+; <<>> DiG 9.18.39-0ubuntu0.24.04.8-Ubuntu <<>> @10.53.0.53 test.fake
+; (1 server found)
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NXDOMAIN, id: 33786
+;; flags: qr rd ra; QUERY: 1, ANSWER: 0, AUTHORITY: 1, ADDITIONAL: 1
+
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags:; udp: 1232
+;; QUESTION SECTION:
+;test.fake.                     IN      A
+
+;; AUTHORITY SECTION:
+.                       59      IN      SOA     a.root-servers.net. hostmaster.nic.lab. 1794242636 1800 900 604800 60
+
+;; Query time: 0 msec
+;; SERVER: 10.53.0.53#53(10.53.0.53) (UDP)
+;; WHEN: Thu Nov 12 18:05:16 UTC 2026
+;; MSG SIZE  rcvd: 109
+
+root@ns-s25:/# dig @10.53.0.53 www.s25.lab
+
+; <<>> DiG 9.18.39-0ubuntu0.24.04.8-Ubuntu <<>> @10.53.0.53 www.s25.lab
+; (1 server found)
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 9384
+;; flags: qr rd ra; QUERY: 1, ANSWER: 1, AUTHORITY: 0, ADDITIONAL: 1
+
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags:; udp: 1232
+;; QUESTION SECTION:
+;www.s25.lab.                   IN      A
+
+;; ANSWER SECTION:
+www.s25.lab.            58      IN      A       10.53.0.81
+
+;; Query time: 1 msec
+;; SERVER: 10.53.0.53#53(10.53.0.53) (UDP)
+;; WHEN: Thu Nov 12 18:13:04 UTC 2026
+;; MSG SIZE  rcvd: 56
+
+root@ns-s25:/# dig @10.53.0.53 www.s25.lab
+
+; <<>> DiG 9.18.39-0ubuntu0.24.04.8-Ubuntu <<>> @10.53.0.53 www.s25.lab
+; (1 server found)
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 23285
+;; flags: qr rd ra; QUERY: 1, ANSWER: 1, AUTHORITY: 0, ADDITIONAL: 1
+
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags:; udp: 1232
+;; QUESTION SECTION:
+;www.s25.lab.                   IN      A
+
+;; ANSWER SECTION:
+www.s25.lab.            57      IN      A       10.53.0.81
+
+;; Query time: 1 msec
+;; SERVER: 10.53.0.53#53(10.53.0.53) (UDP)
+;; WHEN: Thu Nov 12 18:13:05 UTC 2026
+;; MSG SIZE  rcvd: 56
 ```
 
 | Ім'я | Перший запит, мс | Повторний, мс | Сервери, до яких звернувся резолвер (за журналами) |
